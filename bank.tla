@@ -31,14 +31,22 @@ Reopen(customer) ==
     /\ state' = [state EXCEPT![customer] = "open"]
     /\ UNCHANGED <<balance>>
 
+Transfer(from, to, amount) ==
+    /\ from # to
+    /\ Withdraw(from, amount)
+    /\ Deposit(to, amount)
+
 Next ==
-    /\ \E customer \in Customers:
-        \/ \E amount \in 1..10:
-                Deposit(customer, amount)
-        \/ \E amount \in 1..10:
-                Withdraw(customer, amount)
-        \/ Close(customer)
-        \/ Reopen(customer)
+    \/ \E from \in Customers, amount \in 1..10:
+        Deposit(from, amount)
+    \/ \E from \in Customers, amount \in 1..10:
+        Withdraw(from, amount)
+    \/ \E from \in Customers:
+        Close(from)
+    \/ \E from \in Customers:
+        Reopen(from)
+    \/ \E from, to \in Customers, amount \in 1..10:
+        Transfer(from, to, amount)
 
 Spec == Init /\ [][Next]_state
 
