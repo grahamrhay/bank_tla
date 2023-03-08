@@ -1,44 +1,48 @@
 ---- MODULE bank ----
 EXTENDS Integers
 
+CONSTANTS Customers
+
 VARIABLES state, balance
 
 Init ==
-    /\ state = "open"
-    /\ balance = 0
+    /\ state = [c \in Customers |-> "open"]
+    /\ balance = [c \in Customers |-> 0]
 
-Deposit(amount) ==
-    /\ state = "open"
-    /\ balance < 100
-    /\ balance' = balance + amount
+Deposit(customer, amount) ==
+    /\ state[customer] = "open"
+    /\ balance[customer] < 100
+    /\ balance' = [balance EXCEPT![customer] = (balance[customer] + amount)]
     /\ UNCHANGED <<state>>
 
-Withdraw(amount) ==
-    /\ state = "open"
-    /\ (balance - amount) >= 0
-    /\ balance' = balance - amount
+Withdraw(customer, amount) ==
+    /\ state[customer] = "open"
+    /\ (balance[customer] - amount) >= 0
+    /\ balance' = [balance EXCEPT![customer] = (balance[customer] - amount)]
     /\ UNCHANGED <<state>>
 
-Close ==
-    /\ state = "open"
-    /\ state' = "closed"
+Close(customer) ==
+    /\ state[customer] = "open"
+    /\ state' = [state EXCEPT![customer] = "closed"]
     /\ UNCHANGED <<balance>>
 
-Reopen ==
-    /\ state = "closed"
-    /\ state' = "open"
+Reopen(customer) ==
+    /\ state[customer] = "closed"
+    /\ state' = [state EXCEPT![customer] = "open"]
     /\ UNCHANGED <<balance>>
 
 Next ==
-    \/ \E amount \in 1..10:
-            Deposit(amount)
-    \/ \E amount \in 1..10:
-            Withdraw(amount)
-    \/ Close
-    \/ Reopen
+    /\ \E customer \in Customers:
+        \/ \E amount \in 1..10:
+                Deposit(customer, amount)
+        \/ \E amount \in 1..10:
+                Withdraw(customer, amount)
+        \/ Close(customer)
+        \/ Reopen(customer)
 
 Spec == Init /\ [][Next]_state
 
 NoNegativeBalance ==
-    balance >= 0
+    /\ \A customer \in Customers:
+        balance[customer] >= 0
 ====
